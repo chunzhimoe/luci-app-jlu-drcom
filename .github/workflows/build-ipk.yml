@@ -49,12 +49,12 @@ jobs:
       - name: Build po2lmo host tool
         run: |
           cd "$SDK_DIR"
+          make defconfig
           make package/feeds/luci/luci-base/host/compile V=s
 
       - name: Build package
         run: |
           cd "$SDK_DIR"
-          make defconfig
           make package/custom/$PACKAGE_NAME/compile V=s -j"$(nproc)"
 
       - name: Collect artifacts
