@@ -50,19 +50,22 @@ jobs:
         run: |
           cd "$SDK_DIR"
           make defconfig
-          # Try building po2lmo from luci-base host package
-          if make package/feeds/luci/luci-base/host/compile V=s 2>&1; then
-            echo "po2lmo built successfully"
-          else
-            echo "WARNING: luci-base host compile failed, trying alternative..."
-            # Build all host tools as fallback
-            make tools/compile V=s -j"$(nproc)" || true
-            make package/feeds/luci/luci-base/host/compile V=s || true
+          # Try standard make first
+          make package/feeds/luci/luci-base/host/compile V=s 2>&1 || true
+          # If not available, compile po2lmo directly from luci source
+          if [ ! -f "$SDK_DIR/staging_dir/host/bin/po2lmo" ]; then
+            echo "po2lmo not built via make, compiling from source..."
+            PO2LMO_SRC=$(find "$SDK_DIR/feeds/luci" -name "po2lmo.c" 2>/dev/null | head -1)
+            if [ -n "$PO2LMO_SRC" ]; then
+              gcc "$PO2LMO_SRC" -o "$SDK_DIR/staging_dir/host/bin/po2lmo"
+              echo "po2lmo compiled from: $PO2LMO_SRC"
+            else
+              echo "ERROR: po2lmo.c not found in feeds/luci"
+              find "$SDK_DIR/feeds/luci" -name "*.c" | grep -i po2 || true
+              exit 1
+            fi
           fi
-          # Verify po2lmo is available
-          ls -la "$SDK_DIR/staging_dir/host/bin/po2lmo" || \
-            find "$SDK_DIR/staging_dir" -name "po2lmo" 2>/dev/null || \
-            echo "po2lmo not found, .lmo files will not be generated"
+          echo "po2lmo ready: $($SDK_DIR/staging_dir/host/bin/po2lmo --version 2>&1 || echo ok)"
 
       - name: Build package
         run: |
