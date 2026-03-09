@@ -46,6 +46,11 @@ jobs:
           mkdir -p package/custom
           cp -r "$GITHUB_WORKSPACE" "package/custom/$PACKAGE_NAME"
 
+      - name: Build po2lmo host tool
+        run: |
+          cd "$SDK_DIR"
+          make package/feeds/luci/luci-base/host/compile V=s
+
       - name: Build package
         run: |
           cd "$SDK_DIR"
