@@ -50,22 +50,13 @@ jobs:
         run: |
           cd "$SDK_DIR"
           make defconfig
-          # Try standard make first
-          make package/feeds/luci/luci-base/host/compile V=s 2>&1 || true
-          # If not available, compile po2lmo directly from luci source
+          make package/feeds/luci/luci-base/host/compile V=s
+          # po2lmo is installed to staging_dir/hostpkg/bin/ but Makefile expects staging_dir/host/bin/
           if [ ! -f "$SDK_DIR/staging_dir/host/bin/po2lmo" ]; then
-            echo "po2lmo not built via make, compiling from source..."
-            PO2LMO_SRC=$(find "$SDK_DIR/feeds/luci" -name "po2lmo.c" 2>/dev/null | head -1)
-            if [ -n "$PO2LMO_SRC" ]; then
-              gcc "$PO2LMO_SRC" -o "$SDK_DIR/staging_dir/host/bin/po2lmo"
-              echo "po2lmo compiled from: $PO2LMO_SRC"
-            else
-              echo "ERROR: po2lmo.c not found in feeds/luci"
-              find "$SDK_DIR/feeds/luci" -name "*.c" | grep -i po2 || true
-              exit 1
-            fi
+            cp "$SDK_DIR/staging_dir/hostpkg/bin/po2lmo" "$SDK_DIR/staging_dir/host/bin/po2lmo"
+            echo "po2lmo copied from hostpkg/bin to host/bin"
           fi
-          echo "po2lmo ready: $($SDK_DIR/staging_dir/host/bin/po2lmo --version 2>&1 || echo ok)"
+          echo "po2lmo ready at: $SDK_DIR/staging_dir/host/bin/po2lmo"
 
       - name: Build package
         run: |
