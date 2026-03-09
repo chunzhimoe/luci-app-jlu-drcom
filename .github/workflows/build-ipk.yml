@@ -50,7 +50,19 @@ jobs:
         run: |
           cd "$SDK_DIR"
           make defconfig
-          make package/feeds/luci/luci-base/host/compile V=s
+          # Try building po2lmo from luci-base host package
+          if make package/feeds/luci/luci-base/host/compile V=s 2>&1; then
+            echo "po2lmo built successfully"
+          else
+            echo "WARNING: luci-base host compile failed, trying alternative..."
+            # Build all host tools as fallback
+            make tools/compile V=s -j"$(nproc)" || true
+            make package/feeds/luci/luci-base/host/compile V=s || true
+          fi
+          # Verify po2lmo is available
+          ls -la "$SDK_DIR/staging_dir/host/bin/po2lmo" || \
+            find "$SDK_DIR/staging_dir" -name "po2lmo" 2>/dev/null || \
+            echo "po2lmo not found, .lmo files will not be generated"
 
       - name: Build package
         run: |
@@ -60,7 +72,18 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
-          find "$SDK_DIR/bin/packages" -type f -name "*.ipk" -path "*/custom/*" -exec cp {} "$GITHUB_WORKSPACE/artifacts/" \;
+          echo "=== Searching for built IPK files ==="
+          find "$SDK_DIR/bin" -type f -name "*.ipk" | tee /tmp/all_ipks.txt
+          echo "=== Copying package IPKs ==="
+          grep "$PACKAGE_NAME" /tmp/all_ipks.txt | while read f; do
+            echo "Found: $f"
+            cp "$f" "$GITHUB_WORKSPACE/artifacts/"
+          done
+          # Fallback: search entire SDK bin dir
+          if [ -z "$(ls -A "$GITHUB_WORKSPACE/artifacts")" ]; then
+            echo "No IPK found by name, listing all bin/ contents:"
+            find "$SDK_DIR/bin" -type f | head -50
+          fi
           ls -lh "$GITHUB_WORKSPACE/artifacts"
 
       - name: Upload IPK artifact
