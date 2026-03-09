@@ -32,9 +32,10 @@ jobs:
 
       - name: Download and extract OpenWrt SDK
         run: |
-          wget -qO sdk.tar.xz "$SDK_URL"
-          tar -xf sdk.tar.xz
-          SDK_DIR="$(tar -tf sdk.tar.xz | head -n1 | cut -d/ -f1)"
+          wget -qO /tmp/sdk.tar.xz "$SDK_URL"
+          mkdir -p /opt/openwrt-sdk
+          tar -xf /tmp/sdk.tar.xz -C /opt/openwrt-sdk
+          SDK_DIR="/opt/openwrt-sdk/$(tar -tf /tmp/sdk.tar.xz | head -n1 | cut -d/ -f1)"
           echo "SDK_DIR=$SDK_DIR" >> "$GITHUB_ENV"
 
       - name: Prepare feeds and package source
