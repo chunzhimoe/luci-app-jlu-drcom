@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
 	SUBMENU:=3. Applications
 	TITLE:=LuCI Support for jlu drcom
 	PKGARCH:=all
-	DEPENDS:=+python-light
+	DEPENDS:=+python3-light
 endef
 
 define Package/$(PKG_NAME)/description
